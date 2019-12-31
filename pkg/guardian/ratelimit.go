@@ -25,7 +25,7 @@ func (l Limit) String() string {
 // LimitProvider provides the current limit settings
 type LimitProvider interface {
 	// GetLimit returns the current limit settings
-	GetLimit() Limit
+	GetLimit(req Request) Limit
 }
 
 // Counter is a data store capable of incrementing and expiring the count of a key
@@ -36,18 +36,19 @@ type Counter interface {
 	Incr(context context.Context, key string, incryBy uint, maxBeforeBlock uint64, expireIn time.Duration) (uint64, bool, error)
 }
 
+
 // GenericRateLimiter is a rate limiter that uses a function to decide the counter key for rate limiting
 type GenericRateLimiter struct {
-	KeyFunc  func(req Request) string
-	Conf     LimitProvider
-	Counter  Counter
-	Logger   logrus.FieldLogger
-	Reporter MetricReporter
+	KeyFunc       func(req Request) string
+	LimitProvider LimitProvider
+	Counter       Counter
+	Logger        logrus.FieldLogger
+	Reporter      MetricReporter
 }
 
 // Limit limits a request if request exceeds rate limit
 func (rl *GenericRateLimiter) Limit(context context.Context, request Request) (bool, uint32, error) {
-	if rl.KeyFunc == nil || rl.Conf == nil || rl.Counter == nil || rl.Logger == nil || rl.Reporter == nil {
+	if rl.KeyFunc == nil || rl.LimitProvider == nil || rl.Counter == nil || rl.Logger == nil || rl.Reporter == nil {
 		return false, math.MaxUint32, nil
 	}
 
@@ -58,7 +59,7 @@ func (rl *GenericRateLimiter) Limit(context context.Context, request Request) (b
 		rl.Reporter.HandledRatelimit(request, ratelimited, err != nil, time.Since(start))
 	}()
 
-	limit := rl.Conf.GetLimit()
+	limit := rl.LimitProvider.GetLimit(request)
 	rl.Logger.Debugf("fetched limit %v", limit)
 	rl.Reporter.CurrentLimit(limit)
 

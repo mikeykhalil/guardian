@@ -36,7 +36,7 @@ func TestConfStoreReturnsDefaults(t *testing.T) {
 
 	gotWhitelist := c.GetWhitelist()
 	gotBlacklist := c.GetBlacklist()
-	gotLimit := c.GetLimit()
+	gotLimit := c.GetLimit(Request{})
 	gotReportOnly := c.GetReportOnly()
 
 	if !cmp.Equal(gotWhitelist, expectedWhitelist) {

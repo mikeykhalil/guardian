@@ -164,9 +164,8 @@ func (rs *RedisConfStore) RemoveBlacklistCidrs(cidrs []net.IPNet) error {
 	return nil
 }
 
-// SetRouteRateLimits will iterate through the map and set the limit for the corresponding route.
+// SetRouteRateLimits set the limit for each route.
 // If the route limit is already defined in the store, it will be overwritten.
-
 func (rs *RedisConfStore) SetRouteRateLimits(routeRateLimits map[url.URL]Limit) error {
 	for url, limit := range routeRateLimits {
 		route := url.EscapedPath()
@@ -245,13 +244,6 @@ func (rs *RedisConfStore) FetchRouteRateLimits() (map[url.URL]Limit, error) {
 		}
 	}
 	return res, nil
-}
-
-func (rs *RedisConfStore) GetLimit() Limit {
-	rs.conf.RLock()
-	defer rs.conf.RUnlock()
-
-	return rs.conf.limit
 }
 
 func (rs *RedisConfStore) FetchLimit() (Limit, error) {

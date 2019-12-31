@@ -114,12 +114,20 @@ func main() {
 	blacklister := guardian.NewIPBlacklister(redisConfStore, logger.WithField("context", "ip-blacklister"), reporter)
 	rateLimiter := &guardian.GenericRateLimiter{
 		KeyFunc:  guardian.IPRateLimiterKeyFunc,
-		Conf:     redisConfStore,
+		LimitProvider:     guardian.NewGlobalLimitProvider(redisConfStore),
 		Counter:  redisCounter,
 		Logger:   logger.WithField("context", "ip-rate-limiter"),
 		Reporter: reporter,
 	}
-	condFuncChain := guardian.DefaultCondChain(whitelister, blacklister, rateLimiter)
+
+	routeRateLimiter := &guardian.GenericRateLimiter{
+		KeyFunc:  guardian.RouteRateLimiterKeyFunc,
+		LimitProvider:     guardian.NewRouteRateLimitProvider(redisConfStore),
+		Counter:  redisCounter,
+		Logger:   logger.WithField("context", "route-rate-limiter"),
+		Reporter: reporter,
+	}
+	condFuncChain := guardian.DefaultCondChain(whitelister, blacklister, rateLimiter, routeRateLimiter)
 
 	logger.Infof("starting server on %v", *address)
 	server := guardian.NewServer(condFuncChain, redisConfStore, logger.WithField("context", "server"), reporter)
